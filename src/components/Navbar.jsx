@@ -17,6 +17,9 @@ export default function Navbar() {
           <Link to="/about" className="text-gray-600 hover:text-blue-600 transition">
             About
           </Link>
+          <Link to="/register" className="text-gray-600 hover:text-blue-600 transition">
+            Register
+          </Link>
         </div>
       </div>
     </nav>
