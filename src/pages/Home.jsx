@@ -1,3 +1,5 @@
+import { Counter } from "../components/Counter";
+
 // src/pages/Home.jsx
 export default function Home() {
   return (
@@ -8,6 +10,7 @@ export default function Home() {
       <p className="text-lg text-gray-500">
         Temukan gadget impianmu dengan harga terbaik di sini.
       </p>
+      <Counter/>
     </div>
   );
 }
