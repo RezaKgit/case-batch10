@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import axios from "axios";
 
 export default function RegisterForm() {
-    const { register, handleSubmit, watch, formState: { errors } } = useForm();
+    const { register, handleSubmit, watch, reset, formState: { errors } } = useForm();
 
     const [showPassword, setShowPassword] = useState(false);
     const [submitStatus, setSubmitStatus] = useState(null);
+    const [errorStatus, setErrorStatus] = useState(null); // Tambah state untuk handle error dari BE
+    const [isLoading, setIsLoading] = useState(false);
 
     const selectedMemberType = watch("memberType");
 
@@ -15,45 +18,64 @@ export default function RegisterForm() {
         }
     }, [selectedMemberType]);
 
-    const onSubmit = (data) => {
-        console.log("Form Data:", data);
-        setSubmitStatus("Registrasi Berhasil! Cek data di console.");
+    // Mengubah onSubmit menjadi fungsi async
+    const onSubmit = async (data) => {
+        setIsLoading(true);
+        setSubmitStatus(null);
+        setErrorStatus(null);
+
+        try {
+            // Tembak API Register dari Express
+            const response = await axios.post("http://localhost:5001/api/register", data);
+            
+            if(response.data.success) {
+                setSubmitStatus("Registrasi Berhasil! Anda sekarang terdaftar.");
+                reset(); // Kosongkan form setelah sukses
+            }
+        } catch (error) {
+            console.error("Register Error:", error);
+            setErrorStatus(
+                error.response?.data?.message || "Terjadi kesalahan saat menghubungi server."
+            );
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
         <div className="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100 mt-10">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Daftar Member</h2>
 
-            {/* Tampilkan pesan sukses jika state submitStatus terisi */}
+            {/* Pesan Sukses */}
             {submitStatus && (
                 <div className="mb-4 p-3 bg-green-100 text-green-700 rounded text-center font-medium">
                     {submitStatus}
                 </div>
             )}
 
-            {/* Form dimulai. handleSubmit dari RHF membungkus onSubmit kita */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Pesan Error */}
+            {errorStatus && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-center font-medium">
+                    {errorStatus}
+                </div>
+            )}
 
-                {/* --- INPUT TEXT --- */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
                     <input
                         type="text"
-                        // Daftarkan ke RHF dengan aturan validasi
                         {...register("fullName", { required: "Nama wajib diisi!" })}
                         className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
                         placeholder="Masukkan nama lengkap"
                     />
-                    {/* Tampilkan error jika ada */}
                     {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName.message}</p>}
                 </div>
 
-                {/* --- INPUT PASSWORD + USESTATE --- */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <div className="relative">
                         <input
-                            // Tipe input dinamis berdasarkan state showPassword
                             type={showPassword ? "text" : "password"}
                             {...register("password", {
                                 required: "Password wajib diisi!",
@@ -62,7 +84,6 @@ export default function RegisterForm() {
                             className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
                             placeholder="Minimal 6 karakter"
                         />
-                        {/* Tombol Toggle Password menggunakan useState */}
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
@@ -74,7 +95,6 @@ export default function RegisterForm() {
                     {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                 </div>
 
-                {/* --- RADIO BUTTONS --- */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tipe Membership</label>
                     <div className="flex space-x-4">
@@ -100,7 +120,6 @@ export default function RegisterForm() {
                     {errors.memberType && <p className="text-red-500 text-xs mt-1">{errors.memberType.message}</p>}
                 </div>
 
-                {/* --- CHECKBOX --- */}
                 <div className="pt-2">
                     <label className="flex items-center space-x-2 cursor-pointer">
                         <input
@@ -115,12 +134,14 @@ export default function RegisterForm() {
                     {errors.agreeTerms && <p className="text-red-500 text-xs mt-1">{errors.agreeTerms.message}</p>}
                 </div>
 
-                {/* --- SUBMIT BUTTON --- */}
                 <button
                     type="submit"
-                    className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
+                    disabled={isLoading}
+                    className={`w-full font-bold py-2 px-4 rounded-lg transition duration-300 text-white ${
+                        isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                    }`}
                 >
-                    Daftar Sekarang
+                    {isLoading ? "Memproses..." : "Daftar Sekarang"}
                 </button>
 
             </form>
